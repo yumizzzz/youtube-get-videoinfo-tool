@@ -29,7 +29,7 @@ def main():
     st.title('YouTube Get VideoInfo Tool')
     api_key = st.text_input('YouTube API KEY')
     channel_url = st.text_input('Channel URL', placeholder='ex. https://www.youtube.com/user/HikakinTV')
-    max_results = st.number_input('サムネ取得枚数', min_value=0, max_value=50, value=50)
+    max_results = st.number_input('動画本数', min_value=0, max_value=50, value=50)
     selected_order = st.radio('動画の優先度', ('新しい順', '評価の高い順', '再生回数順'))
 
     if st.button('Download'):
