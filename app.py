@@ -14,7 +14,7 @@ YOUTUBE_API_VERSION = 'v3'
 SAVE_PATH = 'results'
 
 
-def download_file(url, dst_path):
+def download_file(url: str, dst_path: str) -> None:
     try:
         with urllib.request.urlopen(url) as web_file:
             data = web_file.read()
