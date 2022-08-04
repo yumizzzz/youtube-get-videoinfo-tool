@@ -22,7 +22,7 @@ Access to <http://localhost:8501/>
 2. 「Download」をclick
 3. ``./result``にサムネ画像と動画情報をまとめたcsvファイルが出力される
 
-![toppage](toppage.png)
+<img src='toppage.png' width='480px'>
 
 ## Appendix
 
