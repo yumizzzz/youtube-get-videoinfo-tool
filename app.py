@@ -98,10 +98,8 @@ def main():
             comment_count = video_statistics['commentCount']
 
             # time
-            analysis_time = datetime.now().astimezone(timezone('Asia/Tokyo'))
-            analysis_time = analysis_time.strftime('%Y/%m/%d %H:%M:%S')
+            analysis_time = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
             publish_time = datetime.strptime(publish_time, '%Y-%m-%dT%H:%M:%S%z')
-            publish_time = publish_time.astimezone(timezone('Asia/Tokyo'))
             publish_time = publish_time.strftime('%Y%m%d_%H%M%S')[2:]
 
             filename = '{}_{}.png'.format(publish_time, channel_title)

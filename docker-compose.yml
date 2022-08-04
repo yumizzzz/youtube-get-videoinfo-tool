@@ -7,10 +7,10 @@ services:
       - ./:/www/app/
     container_name: youtube-get-videoinfo-tool
     working_dir: /www/app/
-    runtime: nvidia
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
+    # runtime: nvidia
+    # environment:
+    #   - NVIDIA_VISIBLE_DEVICES=all
+    #   - NVIDIA_DRIVER_CAPABILITIES=all
     ports:
       - "8501:8501"
     tty: true
