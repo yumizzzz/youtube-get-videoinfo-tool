@@ -2,16 +2,19 @@ import os
 import feedparser
 import urllib.error
 import urllib.request
+import requests
+from bs4 import BeautifulSoup
 from datetime import datetime
 from pytz import timezone
 import pandas as pd
 from googleapiclient.discovery import build
 import streamlit as st
-
+import requests
+from bs4 import BeautifulSoup
 
 YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'
-SAVE_PATH = 'results'
+SAVE_ROOT = 'results'
 
 
 def download_file(url: str, dst_path: str) -> None:
@@ -27,7 +30,7 @@ def download_file(url: str, dst_path: str) -> None:
 def main():
 
     st.title('YouTube Get VideoInfo Tool')
-    api_key = st.text_input('YouTube API KEY')
+    api_key = st.text_input('YouTube API KEY', value='')
     channel_url = st.text_input('Channel URL', placeholder='ex. https://www.youtube.com/user/HikakinTV')
     max_results = st.number_input('動画本数', min_value=0, max_value=50, value=50)
     selected_order = st.radio('動画の優先度', ('新しい順', '評価の高い順', '再生回数順'))
@@ -41,12 +44,17 @@ def main():
             st.error('Channel URL Error!!')
             return
 
-        if 'www.youtube.com/user/' in channel_url:
-            user_name = channel_url.split('/')[-1]
-            rss_url = f'https://www.youtube.com/feeds/videos.xml?user={user_name}'
-            d = feedparser.parse(rss_url)
-            channel_url_raw = d['entries'][0]['authors'][0]['href']
-            channel_id = channel_url_raw.split('/')[-1]
+        # 'www.youtube.com/user/' or # 'www.youtube.com/channel/'の場合、ソースコードよりchannel_id取得
+        if 'www.youtube.com/channel/' not in channel_url:
+
+            html = requests.get(channel_url)
+            soup = BeautifulSoup(html.content, "html.parser")
+            include_channel_id_url = 'https://www.youtube.com/feeds/videos.xml?channel_id='
+
+            for link in soup.find_all('link'):
+                if include_channel_id_url in link.attrs['href']:
+                    channel_id = link.attrs['href'].split('channel_id=')[-1]
+                    break
         else:
             channel_id = channel_url.split('/')[-1]
 
@@ -83,10 +91,10 @@ def main():
             elif 'playlistId' in search_result['id'].keys():
                 video_id = search_result["id"]["playlistId"]
 
-            channel_title = search_result["snippet"]['channelTitle']
-            title = search_result["snippet"]['title']
+            channel_title = search_result["snippet"]['channelTitle'].replace('/', '')
+            title = search_result["snippet"]['title'].replace('/', '')
             publish_time = search_result["snippet"]['publishTime']
-            vide_url = 'https://www.youtube.com/watch?v={}'.format(video_id)
+            video_url = 'https://www.youtube.com/watch?v={}'.format(video_id)
             image_url = 'https://img.youtube.com/vi/{}/hq720.jpg'.format(video_id)
 
             # from video_id
@@ -94,8 +102,14 @@ def main():
             video_response = youtube.videos().list(id=video_id, part='statistics').execute()
             video_statistics = video_response['items'][0]['statistics']
             view_count = video_statistics['viewCount']
-            like_count = video_statistics['likeCount']
-            comment_count = video_statistics['commentCount']
+            try:
+                like_count = video_statistics['likeCount']
+            except:
+                like_count = '-'
+            try:
+                comment_count = video_statistics['commentCount']
+            except:
+                comment_count = '-'
 
             # time
             analysis_time = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
@@ -103,13 +117,16 @@ def main():
             publish_time = publish_time.strftime('%Y%m%d_%H%M%S')[2:]
 
             filename = '{}_{}.png'.format(publish_time, channel_title)
-            download_file(image_url, os.path.join(SAVE_PATH, filename))
+
+            save_path = os.path.join(SAVE_ROOT, channel_title)
+            os.makedirs(save_path, exist_ok=True)
+            download_file(image_url, os.path.join(save_path, filename))
 
             output_dict = {
                 'analysis time': analysis_time,
                 'channel': channel_title,
                 'title': title,
-                'vide_url': vide_url,
+                'video_url': video_url,
                 'image_url': image_url,
                 'filename': filename,
                 'view_count': view_count,
@@ -119,7 +136,7 @@ def main():
             dfs.append(output_dict)
 
         df = pd.DataFrame(dfs)
-        df.to_csv(os.path.join(SAVE_PATH, 'result.csv'), index=False)
+        df.to_csv(os.path.join(save_path, 'result.csv'), index=False)
 
 
 if __name__ == '__main__':
